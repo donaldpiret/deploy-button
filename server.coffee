@@ -17,7 +17,8 @@
 # Author:
 #   donaldpiret
 
-EventSource = require 'eventsource'
+extend = require 'xtend'
+request = require 'request'
 https = require 'https'
 AWS = require 'aws-sdk'
 _ = require 'underscore'
@@ -35,7 +36,12 @@ appStack = process.env.OPSWORKS_STACK_ID
 withMigrations = true
 deployMessage = "Deployment from Spark Button"
 
-source = new EventSource("https://api.spark.io/v1/devices/#{deviceId}/events?access_token=#{accessToken}")
+requestObj = request(
+  uri: "https://api.spark.io/v1/devices/#{deviceId}/events?access_token=#{accessToken}"
+  method: "GET"
+)
+
+chunks = []
 
 class OpsWorksClient
   constructor: (@https, @aws) ->
@@ -122,44 +128,52 @@ class OpsWorksClient
 
 client = new OpsWorksClient https, AWS
 
-source.onmessage = (event) ->
-  console.log(event)
-  console.log(event.data)
-  
-source.onerror = ->
-  console.log('Error!')
+appendToQueue = (arr) ->
+  i = 0
 
-# processItem = (arr) ->
-#   console.log(arr);
-#   obj = {}
-#   i = 0
-#
-#   while i < arr.length
-#     line = arr[i]
-#     console.log("line: #{line}")
-#     if line.indexOf("event:") is 0
-#       obj.name = line.replace("event:", "").trim()
-#     else if line.indexOf("data:") is 0
-#       line = line.replace("data:", "")
-#       console.log("Line: #{line}")
-#       console.log("Parsed:")
-#       console.log(JSON.parse(line))
-#       obj = extend(obj, JSON.parse(line))
-#     i++
-#   console.log JSON.stringify(obj)
-#   if obj.action == 'deploy'
-#     client.deploy appId, appStack, withMigrations, deployMessage, (err, data) ->
-#       if err
-#         console.log "Error deploying: #{JSON.stringify(err)}"
-#       else
-#         console.log "Deploying App"
-#     , (finished) ->
-#       console.log "Deploy finished, status: #{finished["Status"]}"
-#   return
-#
-# onData = (event) ->
-#   chunk = event.toString()
-#   appendToQueue chunk.split("n")
-#   return
-#
-# requestObj.on "data", onData
+  while i < arr.length
+    line = (arr[i] or "").trim()
+    if line is ""
+      i++
+      continue
+    chunks.push line
+    if line.indexOf("data:") is 0
+      processItem chunks
+      chunks = []
+    i++
+  return
+
+processItem = (arr) ->
+  obj = {}
+  i = 0
+
+  while i < arr.length
+    line = arr[i]
+    if line.indexOf("event:") is 0
+      obj.name = line.replace("event:", "").trim()
+    else if line.indexOf("data:") is 0
+      line = line.replace("data:", "")
+      obj = extend(obj, JSON.parse(line))
+    i++
+  console.log JSON.stringify(obj)
+  if obj.name == 'opsworks-deploy'
+    processDeploy(obj)
+  return
+  
+processDeploy = (obj) ->
+  data = JSON.parse(obj.data)
+  if data and data.action == 'deploy'
+    client.deploy appId, appStack, withMigrations, deployMessage, (err, data) ->
+      if err
+        console.log "Error deploying: #{JSON.stringify(err)}"
+      else
+        console.log "Deploying App"
+    , (finished) ->
+      console.log "Deploy finished, status: #{finished["Status"]}"
+
+onData = (event) ->
+  chunk = event.toString()
+  appendToQueue chunk.split("\n")
+  return
+
+requestObj.on "data", onData
