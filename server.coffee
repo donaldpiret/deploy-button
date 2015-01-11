@@ -18,6 +18,7 @@
 #   donaldpiret
 
 extend = require 'xtend'
+request = require 'request'
 https = require 'https'
 AWS = require 'aws-sdk'
 _ = require 'underscore'
