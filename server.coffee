@@ -35,11 +35,11 @@ appStack = process.env.OPSWORKS_STACK_ID
 withMigrations = true
 deployMessage = "Deployment from Spark Button"
 
-
 requestObj = request(
   uri: "https://api.spark.io/v1/devices/#{deviceId}/events?access_token=#{accessToken}"
   method: "GET"
 )
+console.log "requestObj: #{requestObj}"
 
 chunks = []
 
@@ -168,6 +168,7 @@ processItem = (arr) ->
 
 onData = (event) ->
   chunk = event.toString()
+  console.log "Received data: #{chunk}"
   appendToQueue chunk.split("n")
   return
 
