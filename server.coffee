@@ -35,6 +35,7 @@ appStack = process.env.OPSWORKS_STACK_ID
 
 withMigrations = true
 deployMessage = "Deployment from Spark Button"
+statusMessage = "Waiting"
 
 requestObj = request(
   uri: "https://api.spark.io/v1/devices/#{deviceId}/events?access_token=#{accessToken}"
@@ -161,6 +162,7 @@ processItem = (arr) ->
   return
   
 processDeploy = (obj) ->
+  statusMessage = "Deploying..."
   data = JSON.parse(obj.data)
   if data and data.action == 'deploy'
     client.deploy appId, appStack, withMigrations, deployMessage, (err, data) ->
@@ -169,6 +171,7 @@ processDeploy = (obj) ->
       else
         console.log "Deploying App"
     , (finished) ->
+      statusMessage = "Waiting"
       console.log "Deploy finished, status: #{finished["Status"]}"
 
 onData = (event) ->
