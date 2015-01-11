@@ -145,11 +145,13 @@ appendToQueue = (arr) ->
   return
 
 processItem = (arr) ->
+  console.log(arr);
   obj = {}
   i = 0
 
   while i < arr.length
     line = arr[i]
+    console.log("line: #{line}")
     if line.indexOf("event:") is 0
       obj.name = line.replace("event:", "").trim()
     else if line.indexOf("data:") is 0
