@@ -154,6 +154,9 @@ processItem = (arr) ->
       obj.name = line.replace("event:", "").trim()
     else if line.indexOf("data:") is 0
       line = line.replace("data:", "")
+      console.log("Line: #{line}")
+      console.log("Parsed:")
+      console.log(JSON.parse(line))
       obj = extend(obj, JSON.parse(line))
     i++
   console.log JSON.stringify(obj)
@@ -169,7 +172,6 @@ processItem = (arr) ->
 
 onData = (event) ->
   chunk = event.toString()
-  console.log "Received data: #{chunk}"
   appendToQueue chunk.split("n")
   return
 
