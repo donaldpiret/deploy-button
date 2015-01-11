@@ -18,6 +18,7 @@
   "homepage": "https://github.com/donaldpiret/deploy-button",
   "dependencies": {
     "aws-sdk": "^2.1.5",
+    "coffee-script": "^1.8.0",
     "underscore": "^1.7.0",
     "xtend": "^4.0.0"
   }
